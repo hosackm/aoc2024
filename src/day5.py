@@ -1,5 +1,8 @@
 from collections import defaultdict
+from io import StringIO
 from typing import Tuple
+import sys
+import pytest
 
 
 class BeforeTracker:
@@ -8,7 +11,7 @@ class BeforeTracker:
         for first, after in mappings:
             self.before_map[first].add(after)
 
-    def check_swap(self, nums: list[str], swap: bool = False) -> Tuple[list[str], bool]:
+    def audit_list(self, nums: list[str], swap: bool = False) -> Tuple[list[str], bool]:
         """
         Check if the given numbers following the ordering rules in self.before_map.
         If swap is True, then perform a swap of numbers that are out of order.
@@ -26,6 +29,18 @@ class BeforeTracker:
         return nums, correction_required
 
 
+def sum_results(results, is_part_two: bool = False):
+    total = 0
+    for r in results:
+        nums, is_corrected = r
+        if is_part_two and is_corrected:
+            total += int(nums[len(nums) // 2])
+        if not is_part_two and not is_corrected:
+            total += int(nums[len(nums) // 2])
+
+    return total
+
+
 def get_mappings_and_tests(data):
     mappings = []
     tests = []
@@ -37,10 +52,9 @@ def get_mappings_and_tests(data):
     return mappings, tests
 
 
-def test_advent_example():
-    from io import StringIO
-
-    test_input = StringIO("""47|53
+@pytest.fixture
+def test_input():
+    return StringIO("""47|53
     97|13
     97|61
     97|47
@@ -68,37 +82,37 @@ def test_advent_example():
     75,97,47,61,53
     61,13,29
     97,13,75,29,47""")
-    mappings, tests = get_mappings_and_tests(test_input)
+
+
+@pytest.fixture
+def mappings_and_tests(test_input):
+    return get_mappings_and_tests(test_input)
+
+
+def test_advent_example_part_one(mappings_and_tests):
+    mappings, tests = mappings_and_tests
     b = BeforeTracker(mappings)
     expected = (True, True, True, False, False, False)
 
-    # Part 1
-    results = [b.check_swap(t) for t in tests]
+    results = [b.audit_list(t) for t in tests]
     for r, e in zip(results, expected):
         _, is_corrected = r
         assert is_corrected != e
 
-    total = 0
-    for r in results:
-        nums, is_corrected = r
-        if not is_corrected:
-            print(f"adding {r}")
-            total += int(nums[len(nums) // 2])
-    assert total == 143
+    assert sum_results(results) == 143
 
-    # Part 2
-    results = [b.check_swap(t, True) for t in tests]
+
+def test_advent_example_part_two(mappings_and_tests):
+    mappings, tests = mappings_and_tests
+    b = BeforeTracker(mappings)
+    expected = (True, True, True, False, False, False)
+
+    results = [b.audit_list(t, True) for t in tests]
     for r, e in zip(results, expected):
         _, is_corrected = r
         assert is_corrected != e
 
-    total = 0
-    for r in results:
-        nums, is_corrected = r
-        if is_corrected:
-            print(f"adding {r}")
-            total += int(nums[len(nums) // 2])
-    assert total == 123
+    assert sum_results(results, is_part_two=True) == 123
 
 
 def main():
@@ -113,27 +127,15 @@ def main():
                 tests.append(ln.strip().split(","))
 
     b = BeforeTracker(mappings)
-    total = 0
-    for t in tests[:]:
-        _, corrected = b.check_swap(t, False)
-        if not corrected:
-            total += int(t[len(t) // 2])
-    print(f"part 1: {total}")
+    results = [b.audit_list(t, False) for t in tests]
+    print(f"part 1: {sum_results(results)}")
 
-    total = 0
-    for t in tests[:]:
-        output, corrected = b.check_swap(t, True)
-        if corrected:
-            total += int(output[len(output) // 2])
-    print(f"part 2: {total}")
+    results = [b.audit_list(t, True) for t in tests]
+    print(f"part 2: {sum_results(results, True)}")
 
 
 if __name__ == "__main__":
-    import sys
-
     if len(sys.argv) > 1 and sys.argv[1] == "test":
-        import pytest
-
         pytest.main(["-xv", __file__])
     else:
         main()
