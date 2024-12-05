@@ -1,3 +1,5 @@
 zig-out
 .zig-cache
 .vscode
+__pycache__
+.pyc
