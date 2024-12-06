@@ -22,15 +22,6 @@ const Orientation = enum(u8) {
             .down => .{ .r = 1, .c = 0 },
         };
     }
-
-    fn to_ch(self: Orientation) u8 {
-        return switch (self) {
-            .left => '-',
-            .right => '-',
-            .up => '|',
-            .down => '|',
-        };
-    }
 };
 
 const StartInfo = struct {
@@ -59,8 +50,6 @@ const Pathwalker = struct {
     }
 
     pub fn tick(self: *Pathwalker, m: anytype) PathState {
-        const d = self.orientation.delta();
-
         // Mark current grid location
         switch (self.orientation) {
             .up => m.*.history[self.pos_y][self.pos_x] |= 0b1000,
@@ -69,13 +58,17 @@ const Pathwalker = struct {
             .right => m.*.history[self.pos_y][self.pos_x] |= 0b0001,
         }
 
+        // Forecast next location
+        const d = self.orientation.delta();
         const next_x: i32 = @intCast(@as(i32, @intCast(self.pos_x)) + d.c);
         const next_y: i32 = @intCast(@as(i32, @intCast(self.pos_y)) + d.r);
 
+        // We're exiting the maze
         if (next_x < 0 or next_x == m.*.num_cols or next_y < 0 or next_y == m.*.num_rows) {
             return .exited_normally;
         }
 
+        // Change orientation if we're about to hit an obstacle
         const next_ch = m.*.grid[@intCast(next_y)][@intCast(next_x)];
         if (next_ch == '#') {
             self.orientation =
@@ -86,16 +79,18 @@ const Pathwalker = struct {
                 .down => .left,
             };
         } else {
-            const next_history = m.*.history[@intCast(next_y)][@intCast(next_x)];
-            switch (self.orientation) {
-                .up => if (next_history & 0b1000 > 0) return .loop_detected,
-                .down => if (next_history & 0b0100 > 0) return .loop_detected,
-                .left => if (next_history & 0b0010 > 0) return .loop_detected,
-                .right => if (next_history & 0b0001 > 0) return .loop_detected,
-            }
-
             self.pos_x = @intCast(next_x);
             self.pos_y = @intCast(next_y);
+        }
+
+        // Check if we've already moved through the next grid point
+        // with this orientation (ie. we're in a loop)
+        const next_history = m.*.history[@intCast(next_y)][@intCast(next_x)];
+        switch (self.orientation) {
+            .up => if (next_history & 0b1000 > 0) return .loop_detected,
+            .down => if (next_history & 0b0100 > 0) return .loop_detected,
+            .left => if (next_history & 0b0010 > 0) return .loop_detected,
+            .right => if (next_history & 0b0001 > 0) return .loop_detected,
         }
 
         return .still_going;
@@ -268,9 +263,13 @@ test "day 6 example part 1" {
     try std.testing.expect(info.orientation == .up);
     try std.testing.expect(info.row == 6);
     try std.testing.expect(info.col == 4);
+
+    var p = Pathwalker.init(info);
+    while (p.tick(&matrix) == .still_going) {}
+    try std.testing.expect(matrix.count() == 41);
 }
 
-test "day 6 example part 2" {
+test "day 6 example part 2 loop detected" {
     const test_input: []const u8 =
         \\....#.....
         \\.........#
@@ -281,7 +280,7 @@ test "day 6 example part 2" {
         \\.#..^.....
         \\........#.
         \\#.........
-        \\......#...
+        \\......##..
     ;
     var input_buffer: [100]u8 = undefined;
     _ = std.mem.replace(u8, test_input, "\n", "", &input_buffer);
@@ -289,7 +288,15 @@ test "day 6 example part 2" {
     var matrix = Grid(10, 10).init(&input_buffer);
     const info = matrix.find_starting_point_and_orientation();
 
-    try std.testing.expect(info.orientation == .up);
-    try std.testing.expect(info.row == 6);
-    try std.testing.expect(info.col == 4);
+    var p = Pathwalker.init(info);
+    var steps: u32 = 0;
+    while (true) {
+        steps += 1;
+        const result = p.tick(&matrix);
+        switch (result) {
+            .still_going => continue,
+            .loop_detected => break, // good
+            .exited_normally => try std.testing.expect(false),
+        }
+    }
 }
