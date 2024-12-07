@@ -260,7 +260,18 @@ test "day 6 example part 1" {
 
     var p = Pathwalker.init(info);
     while (p.tick(&matrix) == .still_going) {}
-    try std.testing.expect(matrix.count() == 41);
+    const Position = struct { r: usize, c: usize };
+    var positions = std.ArrayList(Position).init(std.testing.allocator);
+    defer positions.deinit();
+
+    for (0..10) |r| {
+        for (0..10) |c| {
+            if (matrix.history[r][c] > 0) {
+                try positions.append(.{ .r = r, .c = c });
+            }
+        }
+    }
+    try std.testing.expect(positions.items.len == 41);
 }
 
 test "day 6 example part 2 loop detected" {
