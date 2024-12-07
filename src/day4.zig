@@ -66,11 +66,11 @@ pub fn Matrix() type {
 
             var r: usize = 0;
             while (try rdr.readUntilDelimiterOrEof(&buffer, '\n')) |line| : (r += 1) {
-                std.debug.print("loading: {s}\n", .{line});
+                // std.debug.print("loading: {s}\n", .{line});
                 for (line, 0..) |ch, col| {
                     self.data[r * self.cols + col] = ch;
                 }
-                std.debug.print("loaded : {s}\n", .{self.data[r * self.cols .. r * self.cols + line.len]});
+                // std.debug.print("loaded : {s}\n", .{self.data[r * self.cols .. r * self.cols + line.len]});
             }
         }
     };
@@ -81,8 +81,9 @@ pub fn solve(
     part: Part,
 ) !i32 {
     _ = part;
-    const m = try Matrix().init(rdr, 140, 140, std.heap.page_allocator);
-    std.debug.print("    Matrix [{d},{d}] = ...\n", .{ m.rows, m.cols });
+    var m = try Matrix().init(rdr, 140, 140, std.heap.page_allocator);
+    defer m.deinit();
+    // std.debug.print("    Matrix [{d},{d}] = ...\n", .{ m.rows, m.cols });
 
     return 0;
 }

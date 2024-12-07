@@ -145,16 +145,6 @@ fn Grid(rows: usize, cols: usize) type {
             };
         }
 
-        pub fn count(self: *Self) i32 {
-            var total: i32 = 0;
-            for (0..self.num_rows) |r| {
-                for (0..self.num_cols) |c| {
-                    if (self.history[r][c] > 0) total += 1;
-                }
-            }
-            return total;
-        }
-
         pub fn clear_history(self: *Self) void {
             for (0..self.num_rows) |r| {
                 for (0..self.num_cols) |c| {
@@ -186,57 +176,61 @@ pub fn solve(rdr: anytype, part: Part) !i32 {
 
     const Matrix = Grid(side, side);
 
+    var matrix = Matrix.init(&bytes_stripped);
+    const info = matrix.find_starting_point_and_orientation();
+    var p = Pathwalker.init(info);
+
+    while (true) {
+        switch (p.tick(&matrix)) {
+            .still_going => continue,
+            .loop_detected, .exited_normally => {
+                break;
+            },
+        }
+    }
+
+    // Retrieve the history to know how many distinct positions there
+    // are and how many potential obstructions.
+    const Position = struct { r: usize, c: usize };
+    var positions = std.ArrayList(Position).init(alloc);
+    defer positions.deinit();
+    for (0..side) |r| {
+        for (0..side) |c| {
+            if (matrix.history[r][c] > 0) {
+                try positions.append(.{ .r = r, .c = c });
+            }
+        }
+    }
+
     if (part == .one) {
-        var matrix = Matrix.init(&bytes_stripped);
-        const info = matrix.find_starting_point_and_orientation();
-        var p = Pathwalker.init(info);
-
-        while (true) {
-            switch (p.tick(&matrix)) {
-                .loop_detected => {
-                    std.debug.print("loop detected\n", .{});
-                    break;
-                },
-                .still_going => {},
-                .exited_normally => {
-                    std.debug.print("exited normally\n", .{});
-                    break;
-                },
-            }
-        }
-
-        return matrix.count();
+        return @intCast(positions.items.len);
     } else {
-        var matrix = Matrix.init(&bytes_stripped);
         var total: i32 = 0;
-        for (0..side) |r| {
-            for (0..side) |c| {
-                if (matrix.grid[r][c] != '.') continue;
+        for (positions.items) |pos| {
+            // reset the walker
+            p = Pathwalker.init(info);
 
-                // add obstruction
-                matrix.grid[r][c] = '#';
-                matrix.clear_history();
+            // add obstruction
+            matrix.grid[pos.r][pos.c] = '#';
+            matrix.clear_history();
 
-                const info = matrix.find_starting_point_and_orientation();
-                var p = Pathwalker.init(info);
-
-                while (true) {
-                    switch (p.tick(&matrix)) {
-                        .loop_detected => {
-                            total += 1;
-                            break;
-                        },
-                        .exited_normally => {
-                            break;
-                        },
-                        else => {},
-                    }
+            while (true) {
+                switch (p.tick(&matrix)) {
+                    .loop_detected => {
+                        total += 1;
+                        break;
+                    },
+                    .exited_normally => {
+                        break;
+                    },
+                    else => continue,
                 }
-
-                // remove obstruction
-                matrix.grid[r][c] = '.';
             }
+
+            // remove obstruction
+            matrix.grid[pos.r][pos.c] = '.';
         }
+
         return total;
     }
 }
@@ -289,9 +283,7 @@ test "day 6 example part 2 loop detected" {
     const info = matrix.find_starting_point_and_orientation();
 
     var p = Pathwalker.init(info);
-    var steps: u32 = 0;
     while (true) {
-        steps += 1;
         const result = p.tick(&matrix);
         switch (result) {
             .still_going => continue,
