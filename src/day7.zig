@@ -71,11 +71,7 @@ pub fn free_solvers(solvers: []Solver, alloc: std.mem.Allocator) void {
     alloc.free(solvers);
 }
 
-pub fn solve(rdr: anytype, part: Part) !u128 {
-    const alloc = std.heap.page_allocator;
-    const solvers = try build_solvers(rdr, alloc);
-    defer free_solvers(solvers, alloc);
-
+pub fn do_solve(solvers: []Solver, part: Part) !u128 {
     var total: u128 = 0;
     for (solvers) |solver| {
         const output = solver.solve(part);
@@ -85,6 +81,14 @@ pub fn solve(rdr: anytype, part: Part) !u128 {
     }
 
     return total;
+}
+
+pub fn solve(rdr: anytype, part: Part) !u128 {
+    const alloc = std.heap.page_allocator;
+    const solvers = try build_solvers(rdr, alloc);
+    defer free_solvers(solvers, alloc);
+
+    return try do_solve(solvers, part);
 }
 
 fn concat(a: u64, b: u64) !u64 {
@@ -114,6 +118,25 @@ test "advent 7 example part 1" {
     var stream = std.io.fixedBufferStream(test_input);
     const solvers = try build_solvers(stream.reader(), std.testing.allocator);
     defer free_solvers(solvers, std.testing.allocator);
+    try std.testing.expect(try do_solve(solvers, .one) == 3749);
+}
+
+test "advent 7 example part 2" {
+    const test_input =
+        \\190: 10 19
+        \\3267: 81 40 27
+        \\83: 17 5
+        \\156: 15 6
+        \\7290: 6 8 6 15
+        \\161011: 16 10 13
+        \\192: 17 8 14
+        \\21037: 9 7 18 13
+        \\292: 11 6 16 20
+    ;
+    var stream = std.io.fixedBufferStream(test_input);
+    const solvers = try build_solvers(stream.reader(), std.testing.allocator);
+    defer free_solvers(solvers, std.testing.allocator);
+    try std.testing.expect(try do_solve(solvers, .two) == 11387);
 }
 
 test "concat numbers" {
