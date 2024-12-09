@@ -13,3 +13,4 @@ Solutions in Zig (version 0.13.0) and Python (when better suited ie. rich list m
 - [x] Day 5
 - [x] Day 6
 - [x] Day 7
+- [x] Day 8
