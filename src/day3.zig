@@ -1,5 +1,5 @@
 const std = @import("std");
-const Part = @import("main.zig").Part;
+const Part = @import("lib.zig").Part;
 pub const input = "data/input3.txt";
 
 const State = enum {

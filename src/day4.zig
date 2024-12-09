@@ -1,5 +1,5 @@
 const std = @import("std");
-const Part = @import("main.zig").Part;
+const Part = @import("lib.zig").Part;
 pub const input = "data/input4.txt";
 
 pub fn Matrix() type {
