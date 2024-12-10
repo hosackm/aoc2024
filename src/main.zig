@@ -8,11 +8,12 @@ const days = .{
     @import("day6.zig"),
     @import("day7.zig"),
     @import("day8.zig"),
+    @import("day9.zig"),
 };
 
 pub fn main() !void {
     inline for (days, 1..) |day, nday| {
-        if (nday != 8) continue;
+        if (nday != 9) continue;
         std.debug.print("Day {d}\n", .{nday});
         inline for (.{ .one, .two }, 1..) |part, npart| {
             const f = try std.fs.cwd().openFile(day.input, .{});
