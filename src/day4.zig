@@ -1,5 +1,6 @@
 const std = @import("std");
-const Part = @import("lib.zig").Part;
+const lib = @import("lib.zig");
+const Part = lib.Part;
 pub const input = "data/input4.txt";
 
 pub fn Matrix() type {
@@ -83,9 +84,12 @@ pub fn solve(
     _ = part;
     var m = try Matrix().init(rdr, 140, 140, std.heap.page_allocator);
     defer m.deinit();
-    // std.debug.print("    Matrix [{d},{d}] = ...\n", .{ m.rows, m.cols });
 
     return 0;
+}
+
+pub fn main() !void {
+    _ = try lib.run(i32, solve, "Day 4", input);
 }
 
 test "matrix from input" {

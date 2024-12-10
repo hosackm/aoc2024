@@ -4,6 +4,16 @@ Solutions in Zig (version 0.13.0) and Python (when better suited ie. rich list m
 
 [Advent of Code](https://adventofcode.com/2024)
 
+## Running
+
+To run a specific day, run:
+
+```bash
+zig run src/day1.zig
+zig run src/day2.zig
+# etc...
+```
+
 ## Solved Problems
 
 - [x] Day 1

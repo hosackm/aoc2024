@@ -1,11 +1,16 @@
+const lib = @import("lib.zig");
 const std = @import("std");
-const Part = @import("lib.zig").Part;
+const Part = lib.Part;
 pub const input = "data/input5.txt";
 
 const Mapping = struct {
     before: u8,
     after: u8,
 };
+
+pub fn main() !void {
+    _ = try lib.run(i32, solve, "Day 5", input);
+}
 
 pub fn solve(rdr: anytype, part: Part) !i32 {
     _ = rdr;

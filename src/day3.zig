@@ -1,5 +1,6 @@
 const std = @import("std");
-const Part = @import("lib.zig").Part;
+const lib = @import("lib.zig");
+const Part = lib.Part;
 pub const input = "data/input3.txt";
 
 const State = enum {
@@ -178,6 +179,10 @@ pub fn solve(
     }
 
     return total;
+}
+
+pub fn main() !void {
+    _ = try lib.run(i32, solve, "Day 3", input);
 }
 
 test "part 1" {

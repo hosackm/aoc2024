@@ -1,5 +1,6 @@
 const std = @import("std");
-const Part = @import("lib.zig").Part;
+const lib = @import("lib.zig");
+const Part = lib.Part;
 
 pub const input = "data/input1.txt";
 
@@ -54,6 +55,10 @@ fn sum_instances(first: []const i32, second: []const i32) !i32 {
 
 pub fn solve(rdr: anytype, part: Part) !i32 {
     return sorted_slices_reader(rdr, part);
+}
+
+pub fn main() !void {
+    _ = try lib.run(i32, solve, "Day 1", input);
 }
 
 test "advent of code examples" {

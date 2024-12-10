@@ -122,6 +122,10 @@ pub fn solve(rdr: anytype, part: lib.Part) !u128 {
     return calc_checksum(layout);
 }
 
+pub fn main() !void {
+    _ = try lib.run(u128, solve, "Day 9", input);
+}
+
 test "advent example part one" {
     const s = "2333133121414131402";
     const layout = try generate_layout(s, std.testing.allocator);

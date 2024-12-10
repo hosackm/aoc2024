@@ -1,5 +1,6 @@
 const std = @import("std");
-const Part = @import("lib.zig").Part;
+const lib = @import("lib.zig");
+const Part = lib.Part;
 
 pub const input = "data/input2.txt";
 
@@ -81,6 +82,10 @@ pub fn solve(rdr: anytype, part: Part) !i32 {
         total += if (try is_stable(nums, part)) 1 else 0;
     }
     return total;
+}
+
+pub fn main() !void {
+    _ = try lib.run(i32, solve, "Day 2", input);
 }
 
 test "advent of code part 1" {

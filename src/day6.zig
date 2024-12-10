@@ -1,3 +1,4 @@
+const lib = @import("lib.zig");
 const std = @import("std");
 const Part = @import("lib.zig").Part;
 
@@ -233,6 +234,10 @@ pub fn solve(rdr: anytype, part: Part) !i32 {
 
         return total;
     }
+}
+
+pub fn main() !void {
+    _ = try lib.run(i32, solve, "Day 6", input);
 }
 
 test "day 6 example part 1" {

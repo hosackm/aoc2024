@@ -119,6 +119,10 @@ pub fn solve(rdr: anytype, part: lib.Part) !usize {
     return try solver.count_antinodes(part);
 }
 
+pub fn main() !void {
+    _ = try lib.run(usize, solve, "Day 8", input);
+}
+
 test "advent of code day 8 example part 1" {
     const alloc = std.testing.allocator;
     const test_input =

@@ -1,3 +1,4 @@
+const lib = @import("lib.zig");
 const std = @import("std");
 const Part = @import("lib.zig").Part;
 
@@ -101,6 +102,10 @@ fn concat(a: u64, b: u64) !u64 {
         ),
         10,
     );
+}
+
+pub fn main() !void {
+    _ = try lib.run(u128, solve, "Day 7", input);
 }
 
 test "advent 7 example part 1" {

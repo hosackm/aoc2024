@@ -5,6 +5,18 @@ pub const Part = enum {
     two,
 };
 
+pub fn run(T: type, func: fn (anytype, Part) anyerror!T, name: []const u8, input: []const u8) !void {
+    std.debug.print("{s}\n", .{name});
+    inline for (.{ .one, .two }, 1..) |part, npart| {
+        const f = try std.fs.cwd().openFile(input, .{});
+        defer f.close();
+        std.debug.print(
+            "  [{d} of 2]: {d}\n",
+            .{ npart, try func(f.reader(), part) },
+        );
+    }
+}
+
 pub const LineReader = struct {
     lines: [][]u8 = undefined,
     alloc: std.mem.Allocator,
