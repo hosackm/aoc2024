@@ -13,7 +13,6 @@ const days = .{
 
 pub fn main() !void {
     inline for (days, 1..) |day, nday| {
-        if (nday != 9) continue;
         std.debug.print("Day {d}\n", .{nday});
         inline for (.{ .one, .two }, 1..) |part, npart| {
             const f = try std.fs.cwd().openFile(day.input, .{});
