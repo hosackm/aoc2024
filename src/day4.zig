@@ -3,93 +3,198 @@ const lib = @import("lib.zig");
 const Part = lib.Part;
 pub const input = "data/input4.txt";
 
-pub fn Matrix() type {
-    return struct {
-        rows: usize = 0,
-        cols: usize = 0,
-        data: []u8 = undefined,
-        alloc: std.mem.Allocator,
+const Point = struct { r: usize, c: usize };
 
-        const Self = @This();
-        const Dimensions = struct { r: usize, c: usize };
+const Mat = struct {
+    data: [][]u8 = undefined,
+    num_rows: usize = 0,
+    num_cols: usize = 0,
+    alloc: std.mem.Allocator = undefined,
 
-        pub fn init(rdr: anytype, r: usize, c: usize, alloc: std.mem.Allocator) !Self {
-            var s = Self{
-                .rows = r,
-                .cols = c,
-                .alloc = alloc,
-            };
-            try s.load(rdr);
-            return s;
-        }
+    const Self = @This();
 
-        // pub fn init(rdr: anytype, alloc: std.mem.Allocator) !Self {
-        //     const dim = try get_dimensions(rdr);
-        //     var s = Self{
-        //         .rows = dim.r,
-        //         .cols = dim.c,
-        //         .alloc = alloc,
-        //     };
-        //     try s.load(rdr);
-        //     return s;
-        // }
+    fn init(lines: [][]const u8, alloc: std.mem.Allocator) !Self {
+        var m = Mat{
+            .num_rows = lines.len,
+            .num_cols = lines[0].len,
+            .alloc = alloc,
+        };
 
-        pub fn at(self: *Self, row: usize, col: usize) !u8 {
-            if (row < 0 or row >= self.rows or col < 0 or col >= self.cols) return error.OutOfBounds;
-            return self.data[row * self.cols + col];
-        }
+        var matrix_list = std.ArrayList([]u8).init(alloc);
+        for (lines) |ln| {
+            var row = std.ArrayList(u8).init(alloc);
+            defer row.deinit();
 
-        pub fn deinit(self: *Self) void {
-            self.alloc.free(self.data);
-        }
-
-        fn get_dimensions(rdr: anytype) !Dimensions {
-            var buffer: [140 * 140]u8 = undefined; // max size of input
-            var s: Dimensions = .{ .r = 0, .c = 0 };
-
-            _ = try rdr.readAll(&buffer);
-            var iter = std.mem.splitScalar(u8, &buffer, '\n');
-            const first_row = iter.first();
-            s.r += 1;
-
-            while (iter.next()) |_| {
-                s.r += 1;
+            for (ln) |ch| {
+                try row.append(ch);
             }
-
-            s.c = first_row.len;
-            return s;
+            try matrix_list.append(try row.toOwnedSlice());
         }
 
-        fn load(self: *Self, rdr: anytype) !void {
-            var buffer: [140]u8 = undefined;
-            const d = try get_dimensions(rdr);
-            self.data = try self.alloc.alloc(u8, d.r * d.c);
+        m.data = try matrix_list.toOwnedSlice();
+        return m;
+    }
 
-            var r: usize = 0;
-            while (try rdr.readUntilDelimiterOrEof(&buffer, '\n')) |line| : (r += 1) {
-                // std.debug.print("loading: {s}\n", .{line});
-                for (line, 0..) |ch, col| {
-                    self.data[r * self.cols + col] = ch;
+    fn deinit(self: Self) void {
+        for (self.data) |ln| {
+            self.alloc.free(ln);
+        }
+        self.alloc.free(self.data);
+    }
+
+    fn count_crossing_mas(self: Self) usize {
+        var total: usize = 0;
+        for (0..self.num_rows) |r| {
+            for (0..self.num_cols) |c| {
+                if (r == 0 or r == self.num_rows - 1 or
+                    c == 0 or c == self.num_cols - 1 or
+                    self.data[r][c] != 'A') continue;
+
+                const diag1: [3]u8 = .{
+                    self.data[r - 1][c - 1],
+                    self.data[r][c],
+                    self.data[r + 1][c + 1],
+                };
+                const diag2: [3]u8 = .{
+                    self.data[r - 1][c + 1],
+                    self.data[r][c],
+                    self.data[r + 1][c - 1],
+                };
+
+                const is_one_mas = std.mem.eql(u8, &diag1, "MAS") or std.mem.eql(u8, &diag1, "SAM");
+                const is_two_mas = std.mem.eql(u8, &diag2, "MAS") or std.mem.eql(u8, &diag2, "SAM");
+                if (is_one_mas and is_two_mas) {
+                    total += 1;
                 }
-                // std.debug.print("loaded : {s}\n", .{self.data[r * self.cols .. r * self.cols + line.len]});
             }
         }
-    };
-}
+
+        return total;
+    }
+
+    fn count_xmas(self: Self) usize {
+        var count: usize = 0;
+        for (0..self.num_rows) |r| {
+            for (0..self.num_cols) |c| {
+                const strings = self.get_directional_strings(.{ .r = r, .c = c });
+                defer self.alloc.free(strings);
+                for (strings) |s| {
+                    if (std.mem.eql(u8, &s, "XMAS")) count += 1;
+                }
+            }
+        }
+        return count;
+    }
+
+    fn get_directional_strings(self: Self, pt: Point) [][4]u8 {
+        var strings = std.ArrayList([4]u8).init(self.alloc);
+
+        const x = pt.c;
+        const y = pt.r;
+        if (x < self.num_cols - 3) { // right
+            strings.append(
+                .{
+                    self.data[y][x],
+                    self.data[y][x + 1],
+                    self.data[y][x + 2],
+                    self.data[y][x + 3],
+                },
+            ) catch unreachable;
+        }
+        if (x >= 3) { // left
+            strings.append(
+                .{
+                    self.data[y][x],
+                    self.data[y][x - 1],
+                    self.data[y][x - 2],
+                    self.data[y][x - 3],
+                },
+            ) catch unreachable;
+        }
+        if (y >= 3) { // up
+            strings.append(
+                .{
+                    self.data[y][x],
+                    self.data[y - 1][x],
+                    self.data[y - 2][x],
+                    self.data[y - 3][x],
+                },
+            ) catch unreachable;
+        }
+        if (y < self.num_rows - 3) { // down
+            strings.append(
+                .{
+                    self.data[y][x],
+                    self.data[y + 1][x],
+                    self.data[y + 2][x],
+                    self.data[y + 3][x],
+                },
+            ) catch unreachable;
+        }
+        if (y >= 3 and x >= 3) { // up-left
+            strings.append(
+                .{
+                    self.data[y][x],
+                    self.data[y - 1][x - 1],
+                    self.data[y - 2][x - 2],
+                    self.data[y - 3][x - 3],
+                },
+            ) catch unreachable;
+        }
+        if (y >= 3 and x < self.num_cols - 3) { // up-right
+            strings.append(
+                .{
+                    self.data[y][x],
+                    self.data[y - 1][x + 1],
+                    self.data[y - 2][x + 2],
+                    self.data[y - 3][x + 3],
+                },
+            ) catch unreachable;
+        }
+        if (y < self.num_rows - 3 and x >= 3) { // down-left
+            strings.append(
+                .{
+                    self.data[y][x],
+                    self.data[y + 1][x - 1],
+                    self.data[y + 2][x - 2],
+                    self.data[y + 3][x - 3],
+                },
+            ) catch unreachable;
+        }
+        if (y < self.num_rows - 3 and x < self.num_cols - 3) { // down-right
+            strings.append(
+                .{
+                    self.data[y][x],
+                    self.data[y + 1][x + 1],
+                    self.data[y + 2][x + 2],
+                    self.data[y + 3][x + 3],
+                },
+            ) catch unreachable;
+        }
+
+        return strings.toOwnedSlice() catch unreachable;
+    }
+};
 
 pub fn solve(
     rdr: anytype,
     part: Part,
-) !i32 {
-    _ = part;
-    var m = try Matrix().init(rdr, 140, 140, std.heap.page_allocator);
+) !usize {
+    const alloc = std.heap.page_allocator;
+    var lr = try lib.LineReader.init(rdr, alloc);
+    defer lr.deinit();
+
+    var m = try Mat.init(lr.lines, alloc);
     defer m.deinit();
 
-    return 0;
+    return switch (part) {
+        .one => m.count_xmas(),
+        .two => m.count_crossing_mas(),
+    };
 }
 
 pub fn main() !void {
-    _ = try lib.run(i32, solve, "Day 4", input);
+    _ = try lib.run(usize, solve, "Day 4", input);
 }
 
 test "matrix from input" {
@@ -105,14 +210,20 @@ test "matrix from input" {
         \\MAMMMXMMMM
         \\MXMXAXMASX
     ;
+    const alloc = std.testing.allocator;
     var stream = std.io.fixedBufferStream(test_input);
-    var m = try Matrix().init(stream.reader(), 10, 10, std.testing.allocator);
+
+    var lr = try lib.LineReader.init(stream.reader(), alloc);
+    defer lr.deinit();
+
+    var m = try Mat.init(lr.lines, alloc);
     defer m.deinit();
 
-    try std.testing.expect(m.rows == 10);
-    try std.testing.expect(m.cols == 10);
+    try std.testing.expect(m.data[0][0] == 'M');
+    try std.testing.expect(std.mem.eql(u8, m.data[0], "MMMSXXMASM"));
+    try std.testing.expect(m.num_rows == 10);
+    try std.testing.expect(m.num_cols == 10);
 
-    std.debug.print("{c}\n", .{m.data[0]});
-
-    // try std.testing.expect(try m.at(0, 0) == 'M');
+    try std.testing.expect(m.count_xmas() == 18);
+    try std.testing.expect(m.count_crossing_mas() == 9);
 }

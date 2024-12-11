@@ -78,7 +78,6 @@ def load_input(f):
 
 def main():
     with open("data/input4.txt") as f:
-        # with open("data/t4.txt") as f:
         mat = load_input(f)
         print(f"part 1: {count(mat)}")
         print(f"part 2: {count_crossing_mas(mat)}")
