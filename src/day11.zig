@@ -43,17 +43,16 @@ const Solver = struct {
     counter: Counter = undefined,
     alloc: std.mem.Allocator,
 
-    var buffer: [1000]u8 = undefined;
+    var buffer: [25]u8 = undefined;
+    const OneOrTwo = union(enum) {
+        one: usize,
+        two: [2]usize,
+    };
     const Self = @This();
 
     fn blink(self: *Self) !void {
         var new_counter = Counter.init(null, self.alloc);
         defer new_counter.deinit();
-
-        const one_or_two = union(enum) {
-            one: usize,
-            two: [2]usize,
-        };
 
         var iter = self.counter.items.iterator();
         while (iter.next()) |entry| {
@@ -61,7 +60,7 @@ const Solver = struct {
             const cnt = entry.value_ptr.*;
             const num_str = to_str(num);
 
-            const updates: one_or_two = if (num == 0)
+            const updates: OneOrTwo = if (num == 0)
                 .{ .one = 1 }
             else if (num_str.len % 2 == 0)
                 .{
