@@ -3,3 +3,4 @@ zig-out
 .vscode
 __pycache__
 .pyc
+./*.txt
