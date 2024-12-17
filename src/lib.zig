@@ -27,7 +27,7 @@ pub const LineReader = struct {
         var ln_list = std.ArrayList([]u8).init(alloc);
         defer ln_list.deinit();
 
-        while (try rdr.readUntilDelimiterOrEofAlloc(alloc, '\n', 1000)) |line| {
+        while (try rdr.readUntilDelimiterOrEofAlloc(alloc, '\n', 10000)) |line| {
             try ln_list.append(line);
         }
 
