@@ -32,7 +32,7 @@ zig run src/day2.zig
 - [x] Day 14
 - [x] Day 15
 - [x] Day 16
-- [ ] Day 17
+- [x] Day 17
 - [ ] Day 18
 - [ ] Day 19
 - [ ] Day 20
