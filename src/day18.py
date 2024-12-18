@@ -8,8 +8,6 @@ class ProgramSpace:
     def __init__(self, n, barriers):
         self.dim = n
         self.m = [["." for _ in range(n)] for _ in range(n)]
-
-        # use heap to priorty queue to maintain order?
         self.barriers = dict.fromkeys(barriers)
         self.num_dropped = 0
 
@@ -19,6 +17,15 @@ class ProgramSpace:
         self.num_dropped += n
         for x, y in to_drop:
             self.m[y][x] = "#"
+
+    def _reconstruct(self, d, start, pt):
+        path = []
+        while pt != start:
+            path.append(pt)
+            pt = d[pt]
+        path.append(start)
+        path.reverse()
+        return path
 
     def shortest_path(self):
         """
@@ -30,15 +37,22 @@ class ProgramSpace:
 
         # the priorty queue of nodes to explore by minimum cost
         pq = []
-        heappush(pq, (0, start, []))
+        heappush(pq, (0, start))
 
         visited = set()
         costs = {start: 0}
+        came_from = {}
 
         while pq:
-            current_cost, (x, y), pth = heappop(pq)
+            current_cost, (x, y) = heappop(pq)
             if (x, y) == end:
-                return current_cost, pth + [(x, y)]
+                #     path = []
+                #     while (x, y) != start:
+                #         path.append((x, y))
+                #         x, y = came_from[(x, y)]
+                #     path.append(start)
+                #     path.reverse()
+                return current_cost, self._reconstruct(came_from, start, (x, y))
             if (x, y) in visited:
                 continue
 
@@ -49,7 +63,8 @@ class ProgramSpace:
                     new_cost = current_cost + 1
                     if (nx, ny) not in costs or new_cost < costs[(nx, ny)]:
                         costs[(nx, ny)] = new_cost
-                        heappush(pq, (new_cost, (nx, ny), pth + [(x, y)]))
+                        came_from[(nx, ny)] = (x, y)
+                        heappush(pq, (new_cost, (nx, ny)))
 
         return inf, None
 
@@ -118,7 +133,7 @@ def barriers():
 def test_advent_example_part_one(barriers):
     ps = ProgramSpace(7, barriers)
     ps.drop(12)
-    cost, _ = ps.shortest_path()
+    cost, pth = ps.shortest_path()
     assert cost == 22
 
 
