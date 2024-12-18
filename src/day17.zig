@@ -3,8 +3,19 @@ const lib = @import("lib.zig");
 
 pub const input = "data/input17.txt";
 
+const OpCode = enum(u3) {
+    adv = 0,
+    bxl = 1,
+    bst = 2,
+    jnz = 3,
+    bxc = 4,
+    out = 5,
+    bdv = 6,
+    cdv = 7,
+};
+
 const Instruction = struct {
-    opcode: u3,
+    opcode: OpCode,
     operand: u3,
 };
 
@@ -41,54 +52,21 @@ const Emulator = struct {
     fn run(self: *@This()) !void {
         while (self.instruction_pointer < self.instructions.len) {
             const inst = self.instructions[self.instruction_pointer];
+            const combo = self.get_combo(inst.operand);
 
-            var incr: usize = 1;
             switch (inst.opcode) {
-                0 => {
-                    // adv: division, A / (2^combo-operand)
-                    const combo = self.get_combo(inst.operand);
-                    const denominator = std.math.pow(i128, 2, combo);
-                    self.a = @divTrunc(self.a, denominator);
+                .adv => self.a = @divTrunc(self.a, std.math.pow(i128, 2, combo)),
+                .bxl => self.b ^= @intCast(inst.operand),
+                .bst => self.b = @mod(combo, 8),
+                .jnz => if (self.a != 0) {
+                    self.instruction_pointer = inst.operand / 2;
                 },
-                1 => {
-                    // bxl, xor, B ^ literal operand
-                    self.b ^= @intCast(inst.operand);
-                },
-                2 => {
-                    // bst, B = combo % 8
-                    const combo = self.get_combo(inst.operand);
-                    self.b = @mod(combo, 8);
-                },
-                3 => {
-                    // jnz, jump if A != 0
-                    if (self.a != 0) {
-                        self.instruction_pointer = inst.operand / 2;
-                        incr = 0;
-                    }
-                },
-                4 => {
-                    // bxc, B^C (do nothing with operand)
-                    self.b = self.b ^ self.c;
-                },
-                5 => {
-                    // out, output combo % 8
-                    const combo = self.get_combo(inst.operand);
-                    try self.output.append(@intCast(@mod(combo, 8)));
-                },
-                6 => {
-                    // bdv
-                    const combo = self.get_combo(inst.operand);
-                    const denominator = std.math.pow(i128, 2, combo);
-                    self.b = @divTrunc(self.a, denominator);
-                },
-                7 => {
-                    // cdv
-                    const combo = self.get_combo(inst.operand);
-                    const denominator = std.math.pow(i128, 2, combo);
-                    self.c = @divTrunc(self.a, denominator);
-                },
+                .bxc => self.b = self.b ^ self.c,
+                .out => try self.output.append(@intCast(@mod(combo, 8))),
+                .bdv => self.b = @divTrunc(self.a, std.math.pow(i128, 2, combo)),
+                .cdv => self.c = @divTrunc(self.a, std.math.pow(i128, 2, combo)),
             }
-            self.instruction_pointer += incr;
+            self.instruction_pointer += if (inst.opcode == .jnz and self.a != 0) 0 else 1;
         }
     }
 
@@ -134,7 +112,7 @@ const Emulator = struct {
         while (comma_iter.next()) |op_code_str| {
             const operand_str = comma_iter.next().?;
             try instructions_list.append(Instruction{
-                .opcode = try std.fmt.parseInt(u3, op_code_str, 10),
+                .opcode = @enumFromInt(try std.fmt.parseInt(u3, op_code_str, 10)),
                 .operand = try std.fmt.parseInt(u3, operand_str, 10),
             });
         }
@@ -152,14 +130,24 @@ pub fn solve(rdr: anytype, part: lib.Part) !usize {
     var lr = try lib.LineReader.init(rdr, alloc);
     defer lr.deinit();
 
-    if (part == .two) {
+    if (part == .one) {
+        var em = Emulator.init(alloc);
+        defer em.deinit();
+
+        try em.parse(lr.lines);
+        try em.run();
+        const str = try em.get_output();
+        defer alloc.free(str);
+        std.debug.print("part 1: {s}\n", .{str});
+    } else {
         var em = Emulator.init(alloc);
         defer em.deinit();
 
         // found by brute forcing guessing
         // multiply by 8 will add a digit to the left.
         // Then by incrementing by one you can set the
-        // rightmost digit correctly then repeat by adding 8
+        // leftmost digit correctly (while maintaing the rightmost)
+        // then repeat by adding 8
         const lines: []const []const u8 = &.{
             "Register A: 164540892147389",
             "Register B: 0",
@@ -173,15 +161,6 @@ pub fn solve(rdr: anytype, part: lib.Part) !usize {
         const str = try em.get_output();
         defer alloc.free(str);
         std.debug.print("part 2: {s}\n", .{str});
-    } else {
-        var em = Emulator.init(alloc);
-        defer em.deinit();
-
-        try em.parse(lr.lines);
-        try em.run();
-        const str = try em.get_output();
-        defer alloc.free(str);
-        std.debug.print("part 1: {s}\n", .{str});
     }
 
     return 0;
@@ -208,9 +187,9 @@ test "parse input" {
     defer em.deinit();
     try em.parse(lr.lines);
 
-    try std.testing.expect(em.instructions[0].opcode == 2);
+    try std.testing.expect(em.instructions[0].opcode == .bst);
     try std.testing.expect(em.instructions[0].operand == 4);
-    try std.testing.expect(em.instructions[7].opcode == 3);
+    try std.testing.expect(em.instructions[7].opcode == .jnz);
     try std.testing.expect(em.instructions[7].operand == 0);
     try std.testing.expect(em.a == 30344604);
     try std.testing.expect(em.b == 0);
