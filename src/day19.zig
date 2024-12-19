@@ -10,10 +10,9 @@ fn combinations(pattern: []const u8, towels: []const []const u8, alloc: std.mem.
 
     d[0] = 1;
     for (1..pattern.len + 1) |n| {
-        const this_chunk = pattern[0..n];
         for (towels) |t| {
-            if (!std.mem.endsWith(u8, this_chunk, t)) continue;
-            d[n] += d[this_chunk.len - t.len];
+            if (!std.mem.endsWith(u8, pattern[0..n], t)) continue;
+            d[n] += d[n - t.len];
         }
     }
 
