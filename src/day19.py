@@ -6,7 +6,7 @@ from collections import defaultdict
 
 def find_combos_dp(pattern, towels):
     d = defaultdict(int)
-    d[""] = 1  # empty is always possible for first iteration
+    d[0] = 1
 
     # dynamic programming table
     for i in range(1, len(pattern) + 1):
@@ -20,10 +20,9 @@ def find_combos_dp(pattern, towels):
             # basing it on the number of patterns we can
             # make with the pattern minus this towel
             # ie. d['abc'] = d['ab'] + towel_c
-            last_chunk = partial_pattern[: -len(t)]
-            d[partial_pattern] += d.get(last_chunk, 0)
+            d[i] += d[len(partial_pattern) - len(t)]
 
-    return d[pattern]
+    return d[len(pattern)]
 
 
 def is_possible(pattern, towels):
