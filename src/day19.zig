@@ -50,3 +50,34 @@ pub fn solve(rdr: anytype, part: lib.Part) !usize {
 pub fn main() !void {
     try lib.run(usize, solve, "Day 19", input);
 }
+
+test "test advent example" {
+    const patterns: []const []const u8 = &.{
+        "brwrr",
+        "bggr",
+        "gbbr",
+        "rrbgbr",
+        "ubwu",
+        "bwurrg",
+        "brgr",
+        "bbrgwb",
+    };
+    const towels: []const []const u8 = &.{
+        "r",
+        "wr",
+        "b",
+        "g",
+        "bwu",
+        "rb",
+        "gb",
+        "br",
+    };
+    const expected = [_]usize{ 2, 1, 4, 6, 0, 1, 2, 0 };
+    for (expected, 0..) |exp, n| {
+        try std.testing.expect(try combinations(
+            patterns[n],
+            towels,
+            std.testing.allocator,
+        ) == exp);
+    }
+}
