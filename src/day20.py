@@ -1,6 +1,6 @@
 import sys
 import pytest
-from collections import Counter, defaultdict
+from collections import defaultdict
 from heapq import heappop, heappush
 from math import inf
 
@@ -20,7 +20,7 @@ def astar(grid, start, end):
 
     rows, cols = len(grid), len(grid[0])
     open_set = []
-    heappush(open_set, (0, start))  # (f_score, position)
+    heappush(open_set, (0, start))
 
     came_from = {}
     g_score = {start: 0}
@@ -65,41 +65,30 @@ def parse(s):
     return m, start, end
 
 
-def find_savings(m, start, end):
+def find_savings(m, start, end, max_distance=2):
     _, path = astar(m, start, end)
-    rows = len(m)
-    cols = len(m[0])
-
-    visited = set()  # don't double count a shortcut
+    visited = set()
     savings = defaultdict(int)
     lookup = {pt: i for i, pt in enumerate(path)}
-    for pt, idx in lookup.items():
-        y, x = pt
-        # manhattan distance of 2
-        # for part 2 this needs to be up to 20 and you need to
-        # iterate through all the options of 2 to 20
-        # maybe you should iterate through all points beforehand and
-        # precalculate the distance from each point to each other pt
-        # ie.
-        # {
-        #    pt1 -> pt2: 3, pt3: 4, pt5: 8
-        #    pt2 -> pt3: 11, pt4: 20
-        #    ptn -> ptn+1: ...
-        # }
-        # This is n^2 but only computed once...
-        for dy, dx in [(-2, 0), (2, 0), (0, 2), (0, -2)]:
-            ny, nx = y + dy, x + dx
-            midx, midy = abs(y + ny) // 2, abs(x + nx) // 2
-            if (
-                0 <= nx < cols
-                and 0 <= ny < rows
-                and (ny, nx) in lookup
-                and (midy, midx) not in visited
-            ):
-                visited.add((midy, midx))
-                diff = abs(lookup[(ny, nx)] - idx) - 2
-                if diff:
-                    savings[diff] += 1
+
+    possible_shortcuts = []
+    for pt in lookup:
+        for pt2 in lookup:
+            if pt == pt2:
+                continue
+            dist = abs(pt2[0] - pt[0]) + abs(pt2[1] - pt[1])
+            if 1 < dist <= max_distance:
+                possible_shortcuts.append((pt, pt2, dist))
+
+    for pta, ptb, dist in possible_shortcuts:
+        if (ptb, pta) in visited:
+            continue
+
+        visited.add((pta, ptb))
+        diff = abs(lookup[ptb] - lookup[pta]) - dist
+        if diff:
+            savings[diff] += 1
+
     return savings
 
 
@@ -109,37 +98,8 @@ def main():
     m, s, e = parse(i)
     savings = find_savings(m, s, e)
     print(f"part 1: {sum(n for i, n in savings.items() if i >= 100)}")
-
-
-# def test_advent_part_one():
-#     i = """###############
-# #...#...#.....#
-# #.#.#.#.#.###.#
-# #S#...#.#.#...#
-# #######.#.#.###
-# #######.#.#...#
-# #######.#.###.#
-# ###..E#...#...#
-# ###.#######.###
-# #...###...#...#
-# #.#####.#.###.#
-# #.#...#.#.#...#
-# #.#.#.#.#.#.###
-# #...#...#...###
-# ###############"""
-#     m, s, e = parse(i)
-#     savings = count_pico_savings(m, s, e)
-#     assert savings[2] == 14
-#     assert savings[4] == 14
-#     assert savings[6] == 2
-#     assert savings[8] == 4
-#     assert savings[10] == 2
-#     assert savings[12] == 3
-#     assert savings[20] == 1
-#     assert savings[36] == 1
-#     assert savings[38] == 1
-#     assert savings[40] == 1
-#     assert savings[64] == 1
+    savings = find_savings(m, s, e, max_distance=20)
+    print(f"part 2: {sum(n for i, n in savings.items() if i >= 100)}")
 
 
 def test_advent_part_one():
