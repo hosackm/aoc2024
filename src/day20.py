@@ -134,6 +134,40 @@ def test_advent_part_one():
     assert astar(m, s, e)[0] == 84
 
 
+def test_advent_part_two():
+    i = """###############
+#...#...#.....#
+#.#.#.#.#.###.#
+#S#...#.#.#...#
+#######.#.#.###
+#######.#.#...#
+#######.#.###.#
+###..E#...#...#
+###.#######.###
+#...###...#...#
+#.#####.#.###.#
+#.#...#.#.#...#
+#.#.#.#.#.#.###
+#...#...#...###
+###############"""
+    m, s, e = parse(i)
+    savings = find_savings(m, s, e, max_distance=20)
+    assert savings[50] == 32
+    assert savings[52] == 31
+    assert savings[54] == 29
+    assert savings[56] == 39
+    assert savings[58] == 25
+    assert savings[60] == 23
+    assert savings[62] == 20
+    assert savings[64] == 19
+    assert savings[66] == 12
+    assert savings[68] == 14
+    assert savings[70] == 12
+    assert savings[72] == 22
+    assert savings[74] == 4
+    assert savings[76] == 3
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "test":
         pytest.main(["-xvss", __file__])
