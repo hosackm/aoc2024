@@ -102,8 +102,9 @@ def main():
     print(f"part 2: {sum(n for i, n in savings.items() if i >= 100)}")
 
 
-def test_advent_part_one():
-    i = """###############
+@pytest.fixture()
+def test_input():
+    return """###############
 #...#...#.....#
 #.#.#.#.#.###.#
 #S#...#.#.#...#
@@ -118,7 +119,10 @@ def test_advent_part_one():
 #.#.#.#.#.#.###
 #...#...#...###
 ###############"""
-    m, s, e = parse(i)
+
+
+def test_advent_part_one(test_input):
+    m, s, e = parse(test_input)
     savings = find_savings(m, s, e)
     assert savings[2] == 14
     assert savings[4] == 14
@@ -134,23 +138,8 @@ def test_advent_part_one():
     assert astar(m, s, e)[0] == 84
 
 
-def test_advent_part_two():
-    i = """###############
-#...#...#.....#
-#.#.#.#.#.###.#
-#S#...#.#.#...#
-#######.#.#.###
-#######.#.#...#
-#######.#.###.#
-###..E#...#...#
-###.#######.###
-#...###...#...#
-#.#####.#.###.#
-#.#...#.#.#...#
-#.#.#.#.#.#.###
-#...#...#...###
-###############"""
-    m, s, e = parse(i)
+def test_advent_part_two(test_input):
+    m, s, e = parse(test_input)
     savings = find_savings(m, s, e, max_distance=20)
     assert savings[50] == 32
     assert savings[52] == 31
