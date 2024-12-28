@@ -42,11 +42,7 @@ def main():
     with open("data/input25.txt") as f:
         locks, keys = parse(f.read())
 
-    total = 0
-    for lock in locks:
-        for key in keys:
-            if can_fit(lock, key):
-                total += 1
+    total = sum(can_fit(lock, key) for lock in locks for key in keys)
     print(f"part 1: {total}")
 
 
