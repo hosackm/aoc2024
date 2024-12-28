@@ -1,6 +1,6 @@
 # Advent of Code 2024
 
-Solutions in Zig (version 0.13.0) and Python (when better suited ie. rich list manipulations).
+Solutions in Zig (version 0.13.0) or Python with the intention of porting to Zig `:)`.
 
 [Advent of Code](https://adventofcode.com/2024)
 
@@ -36,8 +36,8 @@ zig run src/day2.zig
 - [x] Day 18
 - [x] Day 19
 - [x] Day 20
-- [ ] Day 21
-- [ ] Day 22
-- [ ] Day 23
-- [ ] Day 24
-
+- [x] Day 21
+- [x] Day 22
+- [x] Day 23
+- [x] Day 24
+- [x] Day 25
